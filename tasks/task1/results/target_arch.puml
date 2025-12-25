@@ -1,0 +1,65 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+LAYOUT_TOP_DOWN()
+
+System_Boundary(hotelio, "Hotelio") {
+
+    Container(GW, "API Gateway")
+    Container(GQL, "GraphQL")
+    Rel(GW, GQL, "Calls")
+
+    Container(bookingUI, "Booking UI", "Node.js")
+    Container(hotelUI, "Hotel UI", "Node.js")
+    Container(userUI, "User UI", "Node.js")
+    Container(promoUI, "Promo Code UI", "Node.js")
+
+    Rel(bookingUI, GW, "Calls")
+    Rel(hotelUI, GW, "Calls")
+    Rel(userUI, GW, "Calls")
+    Rel(promoUI, GW, "Calls")
+
+    Container_Boundary(booking, "Booking") {
+        Container(bookingService, "Booking Service", "String Boot")
+        ContainerDb(BookingDB, "Booking DB", "PostgreSQL")
+        Rel(bookingService, BookingDB, "Uses")
+    }
+
+    Container_Boundary(hotel, "Hotels") {
+        Container(hotelService, "Hotel Service", "String Boot")
+        ContainerDb(HotelDB, "Hotel DB", "PostgreSQL")
+        Rel(hotelService, HotelDB, "Uses")
+    }
+
+    Container_Boundary(users, "Users") {
+        Container(userService, "User Service", "String Boot")
+        ContainerDb(UserDB, "User DB", "PostgreSQL")
+        Rel(userService, UserDB, "Uses")
+    }
+
+    Container_Boundary(promo, "Promo") {
+        Container(promoService, "Promo Code Service", "String Boot")
+        ContainerDb(PromoCodeDB, "PromoCode DB", "PostgreSQL")
+        Rel(promoService, PromoCodeDB, "Uses")
+    }
+
+    Rel(bookingService, hotelService, "Calls")
+    Rel(bookingService, userService, "Calls")
+    Rel(bookingService, promoService, "Calls")
+
+    Rel(GW, bookingService, "Calls")
+    Rel(GW, hotelService, "Calls")
+    Rel(GW, userService, "Calls")
+    Rel(GW, promoService, "Calls")
+    Rel(GQL, bookingService, "Calls")
+    Rel(GQL, hotelService, "Calls")
+    Rel(GQL, userService, "Calls")
+    Rel(GQL, promoService, "Calls")
+}
+System_Ext(ext, "External system", "calls REST API")
+Rel(ext, GW, "Calls")
+Person(user, "User", "Interacts with frontend")
+Rel(user, bookingUI, "Uses")
+Rel(user, hotelUI, "Uses")
+Rel(user, userUI, "Uses")
+Rel(user, promoUI, "Uses")
+@enduml

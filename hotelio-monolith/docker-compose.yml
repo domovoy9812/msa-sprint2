@@ -18,7 +18,7 @@ services:
       BOOKING_SERVICE_EXTERNAL_PORT: 9090
 
   monolith-db:
-    image: postgres:15
+    image: postgres:17
     container_name: hotelio-db
     environment:
       POSTGRES_USER: hotelio
@@ -57,4 +57,4 @@ volumes:
 
 networks:
   hotelio-net:
-    external: true
+    driver: bridge
