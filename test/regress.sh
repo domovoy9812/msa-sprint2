@@ -4,20 +4,27 @@ set -euo pipefail
 echo "🏁 Регрессионный тест до миграции Hotelio"
 
 # Проверка соединения
-echo "🧪 Проверка подключения к БД..."
-timeout 2 bash -c "</dev/tcp/${DB_HOST}/${DB_PORT}" \
-  || { echo "❌ Не удалось подключиться к ${DB_HOST}:${DB_PORT}"; exit 1; }
+echo "🧪 Проверка подключения к БД монолита..."
+timeout 2 bash -c "</dev/tcp/${MONOLITH_DB_HOST}/${MONOLITH_DB_PORT}" \
+  || { echo "❌ Не удалось подключиться к ${MONOLITH_DB_HOST}:${MONOLITH_DB_PORT}"; exit 1; }
+
+echo "🧪 Проверка подключения к БД booking..."
+timeout 2 bash -c "</dev/tcp/${BOOKING_DB_HOST}/${BOOKING_DB_PORT}" \
+  || { echo "❌ Не удалось подключиться к ${BOOKING_DB_HOST}:${BOOKING_DB_PORT}"; exit 1; }
 
 # Загрузка фикстур
-echo "🧪 Загрузка фикстур..."
-PGPASSWORD="${DB_PASSWORD}" psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_USER}" "${DB_NAME}" < init-fixtures.sql
+echo "🧪 Загрузка фикстур в БД монолита..."
+PGPASSWORD="${MONOLITH_DB_PASSWORD}" psql -h "${MONOLITH_DB_HOST}" -p "${MONOLITH_DB_PORT}" -U "${MONOLITH_DB_USER}" "${MONOLITH_DB_NAME}" < init-fixtures.sql
+
+echo "🧪 Загрузка фикстур в БД booking..."
+PGPASSWORD="${BOOKING_DB_PASSWORD}" psql -h "${BOOKING_DB_HOST}" -p "${BOOKING_DB_PORT}" -U "${BOOKING_DB_USER}" "${BOOKING_DB_NAME}" < init-fixtures-booking.sql
 
 echo "🧪 Выполнение HTTP-тестов..."
 
 pass() { echo "✅ $1"; }
 fail() { echo "❌ $1"; exit 1; }
 
-BASE="${API_URL:-http://localhost:8080}"
+BASE="${MONOLITH_API_URL:-http://localhost:8080}"
 
 echo ""
 echo "Тесты пользователей..."
@@ -101,19 +108,19 @@ echo ""
 echo "Тесты бронирования..."
 
 # 1. Получение всех бронирований
-curl -sSf "${BASE}/api/bookings" | grep -q 'test-user-2' && pass "Все бронирования получены" || fail "Бронирования не получены"
+curl -sSf "${BOOKING_API_URL}/api/bookings" | grep -q 'test-user-2' && pass "Все бронирования получены" || fail "Бронирования не получены"
 
 # 2. Получение бронирований пользователя
-curl -sSf "${BASE}/api/bookings?userId=test-user-2" | grep -q 'test-user-2' && pass "Бронирования test-user-2 найдены" || fail "Нет бронирований test-user-2"
+curl -sSf "${BOOKING_API_URL}/api/bookings?userId=test-user-2" | grep -q 'test-user-2' && pass "Бронирования test-user-2 найдены" || fail "Нет бронирований test-user-2"
 
 # 3. Успешное бронирование отеля без промо
-curl -sSf -X POST "${BASE}/api/bookings?userId=test-user-3&hotelId=test-hotel-1" | grep -q 'test-hotel-1' && pass "Бронирование прошло (без промо)" || fail "Бронирование (без промо) не прошло"
+curl -sSf -X POST "${BOOKING_API_URL}/api/bookings?userId=test-user-3&hotelId=test-hotel-1" | grep -q 'test-hotel-1' && pass "Бронирование прошло (без промо)" || fail "Бронирование (без промо) не прошло"
 
 # 4. Успешное бронирование с промо
-curl -sSf -X POST "${BASE}/api/bookings?userId=test-user-2&hotelId=test-hotel-1&promoCode=TESTCODE1" | grep -q 'TESTCODE1' && pass "Бронирование с промо прошло" || fail "Бронирование с промо не прошло"
+curl -sSf -X POST "${BOOKING_API_URL}/api/bookings?userId=test-user-2&hotelId=test-hotel-1&promoCode=TESTCODE1" | grep -q 'TESTCODE1' && pass "Бронирование с промо прошло" || fail "Бронирование с промо не прошло"
 
 # 5. Ошибка — неактивный пользователь
-code=$(curl -s -o /dev/null -w "%{http_code}" -X POST "${BASE}/api/bookings?userId=test-user-0&hotelId=test-hotel-1")
+code=$(curl -s -o /dev/null -w "%{http_code}" -X POST "${BOOKING_API_URL}/api/bookings?userId=test-user-0&hotelId=test-hotel-1")
 if [[ "$code" == "500" ]]; then
   pass "Отклонено: неактивный пользователь"
 else
@@ -121,12 +128,12 @@ else
 fi
 
 # 6. Ошибка — отель не доверенный
-curl -s -o /dev/null -w "%{http_code}" -X POST "${BASE}/api/bookings?userId=test-user-2&hotelId=test-hotel-3" | grep -q '500' \
+curl -s -o /dev/null -w "%{http_code}" -X POST "${BOOKING_API_URL}/api/bookings?userId=test-user-2&hotelId=test-hotel-3" | grep -q '500' \
   && pass "Отклонено: недоверенный отель" \
   || fail "Ошибка: сервер принял бронирование от недоверенного отеля"
 
 # 7. Ошибка — отель полностью забронирован
-curl -s -o /dev/null -w "%{http_code}" -X POST "${BASE}/api/bookings?userId=test-user-2&hotelId=test-hotel-2" | grep -q '500' \
+curl -s -o /dev/null -w "%{http_code}" -X POST "${BOOKING_API_URL}/api/bookings?userId=test-user-2&hotelId=test-hotel-2" | grep -q '500' \
   && pass "Отклонено: отель полностью забронирован" \
   || fail "Ошибка: сервер принял бронирование в полностью занятом отеле"
 echo "✅ Все HTTP-тесты пройдены!"

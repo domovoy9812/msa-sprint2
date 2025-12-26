@@ -16,7 +16,7 @@ docker compose up -d --build
 В логах приложения должно быть:
 ```
 ➡️  BookingService beans:
-    - bookingService: class com.hotelio.monolith.service.BookingService
+    - bookingService: class com.hotelio.booking.service.BookingService
     - grpcBookingService: class com.hotelio.GrpcBookingService
 ```
 

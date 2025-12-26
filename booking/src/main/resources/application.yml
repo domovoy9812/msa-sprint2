@@ -1,0 +1,23 @@
+server:
+  port: 9090
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: create
+    show-sql: true
+    properties:
+      hibernate.format_sql: false
+hotelio:
+  service:
+    user:
+      host: ${HOTELIO_MONOLITH_HOST}
+      port: ${HOTELIO_MONOLITH_PORT}
+    review:
+      host: ${HOTELIO_MONOLITH_HOST}
+      port: ${HOTELIO_MONOLITH_PORT}
+    promo:
+      host: ${HOTELIO_MONOLITH_HOST}
+      port: ${HOTELIO_MONOLITH_PORT}
+    hotel:
+      host: ${HOTELIO_MONOLITH_HOST}
+      port: ${HOTELIO_MONOLITH_PORT}
