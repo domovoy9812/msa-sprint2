@@ -10,6 +10,14 @@ spring:
   grpc:
     server:
       port: 9090
+  kafka:
+    bootstrap-servers: ${KAFKA_SERVER}
+    producer:
+      enable:
+        idempotence: "true"
+      acks: "all"
+      key-serializer: "org.apache.kafka.common.serialization.StringSerializer"
+      value-serializer: "org.springframework.kafka.support.serializer.JsonSerializer"
 hotelio:
   service:
     user:

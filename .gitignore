@@ -1,3 +1,6 @@
 /.gradle/
 /build/
 /booking/build/
+/booking-statistics/build/
+/shared/build/
+/.idea/modules/booking-statistics/hotelio.booking-statistics.main.iml

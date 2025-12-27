@@ -58,6 +58,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: booking
       HOTELIO_MONOLITH_HOST: hotelio-monolith
       HOTELIO_MONOLITH_PORT: 8080
+      KAFKA_SERVER: "http://kafka:9092"
     depends_on:
       - booking-db
   booking-db:
@@ -80,7 +81,44 @@ services:
       timeout: 60s
       retries: 5
       start_period: 80s
-
+  booking-statistics:
+    build:
+      context: booking-statistics
+      dockerfile: Dockerfile
+    container_name: booking-statistics
+    ports:
+      - "8086:8080"
+      - "8186:8180"
+    networks:
+      - hotelio-net
+    environment:
+      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:8180"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://booking-statistics-db:5430/booking-statistics
+      SPRING_DATASOURCE_USERNAME: booking-statistics
+      SPRING_DATASOURCE_PASSWORD: booking-statistics
+      KAFKA_SERVER: "http://kafka:9092"
+    depends_on:
+      - booking-statistics-db
+  booking-statistics-db:
+    image: postgres:17
+    container_name: booking-statistics-db
+    environment:
+      POSTGRES_USER: booking-statistics
+      POSTGRES_PASSWORD: booking-statistics
+      POSTGRES_DB: booking-statistics
+      PGPORT: 5430
+    ports:
+      - "5430:5430"
+    volumes:
+      - booking-statistics-db-data:/var/lib/postgresql/data
+    networks:
+      - hotelio-net
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready", "-d", "db_prod" ]
+      interval: 30s
+      timeout: 60s
+      retries: 5
+      start_period: 80s
   kafka:
     image: confluentinc/cp-kafka:7.2.1
     ports:
@@ -105,6 +143,7 @@ services:
 volumes:
   monolith-db-data:
   booking-db-data:
+  booking-statistics-db-data:
 networks:
   hotelio-net:
     driver: bridge

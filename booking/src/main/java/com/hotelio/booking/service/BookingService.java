@@ -1,12 +1,10 @@
 package com.hotelio.booking.service;
 
-import com.hotelio.booking.client.HotelClient;
-import com.hotelio.booking.client.PromoCodeClient;
-import com.hotelio.booking.client.ReviewClient;
-import com.hotelio.booking.client.UserClient;
+import com.hotelio.booking.client.*;
 import com.hotelio.booking.data.entity.Booking;
 import com.hotelio.booking.data.repository.BookingRepository;
 import com.hotelio.booking.dto.PromoCode;
+import com.hotelio.shared.dto.BookingHistory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -26,19 +24,21 @@ public class BookingService {
     private final ReviewClient reviewService;
     private final UserClient userService;
     private final HotelClient hotelService;
-
+    private final KafkaBookingHistorySender bookingHistorySender;
     public BookingService(
             BookingRepository bookingRepository,
             PromoCodeClient promoCodeService,
             ReviewClient reviewService,
             UserClient userService,
-            HotelClient hotelService
+            HotelClient hotelService,
+            KafkaBookingHistorySender bookingHistorySender
     ) {
         this.bookingRepository = bookingRepository;
         this.promoCodeService = promoCodeService;
         this.reviewService = reviewService;
         this.userService = userService;
         this.hotelService = hotelService;
+        this.bookingHistorySender = bookingHistorySender;
     }
 
     public List<Booking> listAll(String userId) {
@@ -63,7 +63,9 @@ public class BookingService {
         booking.setPromoCode(promoCode);
         booking.setDiscountPercent(discount);
         booking.setPrice(finalPrice);
-        booking.setCreatedAt(Instant.now());
+        Instant createdAt = Instant.now();
+        booking.setCreatedAt(createdAt);
+        bookingHistorySender.sendBooking(new BookingHistory(userId, hotelId, promoCode, discount, finalPrice, createdAt));
         return bookingRepository.save(booking);
     }
 
