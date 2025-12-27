@@ -49,6 +49,6 @@
 ```bash
 cd test/
 docker build -t hotelio-tester .
-docker run --rm -e MONOLITH_DB_HOST=host.docker.internal -e MONOLITH_DB_PORT=5432 -e MONOLITH_DB_NAME=hotelio -e MONOLITH_DB_USER=hotelio -e MONOLITH_DB_PASSWORD=hotelio -e MONOLITH_API_URL=http://host.docker.internal:8084 -e BOOKING_DB_HOST=host.docker.internal -e BOOKING_DB_PORT=5431 -e BOOKING_DB_NAME=booking -e BOOKING_DB_USER=booking -e BOOKING_DB_PASSWORD=booking -e BOOKING_API_URL=http://host.docker.internal:9090 hotelio-tester
+docker run --rm -e MONOLITH_DB_HOST=host.docker.internal -e MONOLITH_DB_PORT=5432 -e MONOLITH_DB_NAME=hotelio -e MONOLITH_DB_USER=hotelio -e MONOLITH_DB_PASSWORD=hotelio -e MONOLITH_API_URL=http://host.docker.internal:8084 -e BOOKING_DB_HOST=host.docker.internal -e BOOKING_DB_PORT=5431 -e BOOKING_DB_NAME=booking -e BOOKING_DB_USER=booking -e BOOKING_DB_PASSWORD=booking hotelio-tester
 ```
 

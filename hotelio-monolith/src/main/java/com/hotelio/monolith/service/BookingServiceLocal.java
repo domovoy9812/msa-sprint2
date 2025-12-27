@@ -1,38 +1,34 @@
-package com.hotelio.booking.service;
+package com.hotelio.monolith.service;
 
-import com.hotelio.booking.client.HotelClient;
-import com.hotelio.booking.client.PromoCodeClient;
-import com.hotelio.booking.client.ReviewClient;
-import com.hotelio.booking.client.UserClient;
-import com.hotelio.booking.data.entity.Booking;
-import com.hotelio.booking.data.repository.BookingRepository;
-import com.hotelio.booking.dto.PromoCode;
+import com.hotelio.monolith.entity.Booking;
+import com.hotelio.monolith.entity.PromoCode;
+import com.hotelio.monolith.repository.BookingRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
 @Service
-public class BookingService {
+@ConditionalOnProperty(name = "use-external-booking", havingValue = "false", matchIfMissing = true)
+public class BookingServiceLocal implements BookingService {
 
-    private static final Logger log = LoggerFactory.getLogger(BookingService.class);
+    private static final Logger log = LoggerFactory.getLogger(BookingServiceLocal.class);
 
     private final BookingRepository bookingRepository;
-    private final PromoCodeClient promoCodeService;
-    private final ReviewClient reviewService;
-    private final UserClient userService;
-    private final HotelClient hotelService;
+    private final PromoCodeService promoCodeService;
+    private final ReviewService reviewService;
+    private final AppUserService userService;
+    private final HotelService hotelService;
 
-    public BookingService(
+    public BookingServiceLocal(
             BookingRepository bookingRepository,
-            PromoCodeClient promoCodeService,
-            ReviewClient reviewService,
-            UserClient userService,
-            HotelClient hotelService
+            PromoCodeService promoCodeService,
+            ReviewService reviewService,
+            AppUserService userService,
+            HotelService hotelService
     ) {
         this.bookingRepository = bookingRepository;
         this.promoCodeService = promoCodeService;
@@ -41,10 +37,12 @@ public class BookingService {
         this.hotelService = hotelService;
     }
 
+    @Override
     public List<Booking> listAll(String userId) {
-        return StringUtils.hasLength(userId) ? bookingRepository.findByUserId(userId) : bookingRepository.findAll();
+        return userId != null ? bookingRepository.findByUserId(userId) : bookingRepository.findAll();
     }
 
+    @Override
     public Booking createBooking(String userId, String hotelId, String promoCode) {
         log.info("Creating booking: userId={}, hotelId={}, promoCode={}", userId, hotelId, promoCode);
 
@@ -63,7 +61,7 @@ public class BookingService {
         booking.setPromoCode(promoCode);
         booking.setDiscountPercent(discount);
         booking.setPrice(finalPrice);
-        booking.setCreatedAt(Instant.now());
+
         return bookingRepository.save(booking);
     }
 
@@ -106,7 +104,8 @@ public class BookingService {
     }
 
     private double resolvePromoDiscount(String promoCode, String userId) {
-        if (!StringUtils.hasLength(promoCode)) return 0.0;
+        if (promoCode == null) return 0.0;
+
         PromoCode promo = promoCodeService.validate(promoCode, userId);
         if (promo == null) {
             log.info("Promo code '{}' is invalid or not applicable for user {}", promoCode, userId);

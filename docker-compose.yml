@@ -8,12 +8,15 @@ services:
     container_name: hotelio-monolith
     ports:
       - "8084:8080"
+      - "8184:8180"
     networks:
       - hotelio-net
     environment:
+      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:8180"
       SPRING_DATASOURCE_URL: jdbc:postgresql://monolith-db:5432/hotelio
       SPRING_DATASOURCE_USERNAME: hotelio
       SPRING_DATASOURCE_PASSWORD: hotelio
+      use-external-booking: true
       BOOKING_SERVICE_EXTERNAL_HOST: booking
       BOOKING_SERVICE_EXTERNAL_PORT: 9090
     depends_on:
@@ -44,9 +47,12 @@ services:
     container_name: booking
     ports:
       - "9090:9090"
+      - "8085:8080"
+      - "8185:8180"
     networks:
       - hotelio-net
     environment:
+      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:8180"
       SPRING_DATASOURCE_URL: jdbc:postgresql://booking-db:5431/booking
       SPRING_DATASOURCE_USERNAME: booking
       SPRING_DATASOURCE_PASSWORD: booking
